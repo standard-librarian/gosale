@@ -1,6 +1,8 @@
 # Build the Go Binary.
-FROM golang:1.21.3 as build_sales-api
-ENV CGO_ENABLED 0
+
+FROM golang:1.25.5 AS build_sales-api
+ENV CGO_ENABLED=0
+
 ARG BUILD_REF
 
 # Create the service directory and the copy the module files first and then
