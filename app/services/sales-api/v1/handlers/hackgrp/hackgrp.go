@@ -2,12 +2,16 @@ package hackgrp
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 
 	"github.com/standard-librarian/gosale/foundation/web"
 )
 
 func Hack(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	if n := rand.Intn(2); n == 0 {
+		return web.NewShutdownError("hack group initiated shutdown")
+	}
 	status := struct {
 		Status string
 	}{
