@@ -3,8 +3,8 @@ package v1
 import (
 	"os"
 
-	"github.com/dimfeld/httptreemux/v5"
 	"github.com/standard-librarian/gosale/foundation/logger"
+	"github.com/standard-librarian/gosale/foundation/web"
 )
 
 // APIMuxConfig contains all the mandatory systems required by handlers.
@@ -17,14 +17,14 @@ type APIMuxConfig struct {
 // RouteAdder defines behavior that sets the routes to bind for an instance
 // of the service.
 type RouteAdder interface {
-	Add(mux *httptreemux.ContextMux, cfg APIMuxConfig)
+	Add(app *web.App, cfg APIMuxConfig)
 }
 
 // APIMux constructs a http.Handler with all application routes defined.
-func APIMux(cfg APIMuxConfig, routeAdder RouteAdder) *httptreemux.ContextMux {
-	mux := httptreemux.NewContextMux()
+func APIMux(cfg APIMuxConfig, routeAdder RouteAdder) *web.App {
+	app := web.NewApp(cfg.Shutdown)
 
-	routeAdder.Add(mux, cfg)
+	routeAdder.Add(app, cfg)
 
-	return mux
+	return app
 }
