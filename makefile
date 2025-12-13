@@ -2,12 +2,14 @@
 SHELL_PATH = /bin/ash
 SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 
-
 run:
 	go run app/services/sales-api/main.go | go run app/tooling/logfmt/main.go
 
 run-help:
 	go run app/services/sales-api/main.go --help | go run app/tooling/logfmt/main.go
+
+curl:
+	curl -il http://localhost:3000/hack
 
 # ==============================================================================
 # Define dependencies
@@ -33,7 +35,7 @@ VERSION         := 0.0.1
 SERVICE_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME):$(VERSION)
 METRICS_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME)-metrics:$(VERSION)
 
-# ==============================================================================
+# VERSION       := "0.0.1-$(shell git rev-parse --short HEAD)"
 
 # ==============================================================================
 # Building containers
@@ -47,7 +49,6 @@ service:
 		--build-arg BUILD_REF=$(VERSION) \
 		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 		.
-
 
 # ==============================================================================
 # Running from within k8s/kind
@@ -66,7 +67,6 @@ dev-down:
 # ------------------------------------------------------------------------------
 
 dev-load:
-	cd zarf/k8s/dev/sales; kustomize edit set image service-image=$(SERVICE_IMAGE)
 	kind load docker-image $(SERVICE_IMAGE) --name $(KIND_CLUSTER)
 
 dev-apply:
