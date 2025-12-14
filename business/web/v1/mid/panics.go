@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	metrics "github.com/standard-librarian/gosale/business/web/v1/mertrics"
 	"github.com/standard-librarian/gosale/foundation/web"
 )
 
@@ -22,7 +23,7 @@ func Panics() web.Middleware {
 					trace := debug.Stack()
 					err = fmt.Errorf("PANIC [%v] TRACE[%s]", rec, string(trace))
 
-					// metrics.AddPanics(ctx)
+					metrics.AddPanics(ctx)
 				}
 			}()
 
