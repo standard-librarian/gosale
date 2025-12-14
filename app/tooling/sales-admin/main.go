@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -13,6 +15,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/open-policy-agent/opa/v1/rego"
 )
 
 // Core OPA policies.
@@ -98,6 +101,80 @@ func gentoken() error {
 	fmt.Println("SIGNATURE VALIDATED")
 	fmt.Printf("%#v\n", claims2)
 	fmt.Println("****************")
+
+	// -------------------------------------------------------------------------
+
+	var claims3 struct {
+		jwt.RegisteredClaims
+		Roles []string
+	}
+
+	_, _, err = parser.ParseUnverified(str, &claims3)
+	if err != nil {
+		return fmt.Errorf("error parsing token unver: %w", err)
+	}
+
+	// Marshal the public key from the private key to PKIX.
+	asn1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("marshaling public key: %w", err)
+	}
+
+	// Construct a PEM block for the public key.
+	publicBlock := pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: asn1Bytes,
+	}
+
+	var b bytes.Buffer
+
+	// Write the public key to the public key file.
+	if err := pem.Encode(&b, &publicBlock); err != nil {
+		return fmt.Errorf("encoding to public file: %w", err)
+	}
+
+	input := map[string]any{
+		"Key":   b.String(),
+		"Token": str,
+	}
+
+	if err := opaPolicyEvaluation(context.Background(), opaAuthentication, input); err != nil {
+		return fmt.Errorf("authentication failed : %w", err)
+	}
+
+	fmt.Println("SIGNATURE VALIDATED BY REGO")
+	fmt.Println("****************")
+
+	return nil
+}
+
+func opaPolicyEvaluation(ctx context.Context, opaPolicy string, input any) error {
+	const opaPackage = "mdht.rego"
+	const rule string = "auth"
+
+	query := fmt.Sprintf("x = data.%s.%s", opaPackage, rule)
+
+	q, err := rego.New(
+		rego.Query(query),
+		rego.Module("policy.rego", opaPolicy),
+	).PrepareForEval(ctx)
+	if err != nil {
+		return err
+	}
+
+	results, err := q.Eval(ctx, rego.EvalInput(input))
+	if err != nil {
+		return fmt.Errorf("query: %w", err)
+	}
+
+	if len(results) == 0 {
+		return errors.New("no results")
+	}
+
+	result, ok := results[0].Bindings["x"].(bool)
+	if !ok || !result {
+		return fmt.Errorf("bindings results[%v] ok[%v]", results, ok)
+	}
 
 	return nil
 }

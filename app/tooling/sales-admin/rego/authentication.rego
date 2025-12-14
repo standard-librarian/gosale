@@ -1,16 +1,13 @@
-package ardan.rego
+package mdht.rego
 
-default auth = false
+default auth := false
 
-auth {
+auth if {
 	jwt_valid
 }
 
-jwt_valid := valid {
+jwt_valid := valid if {
 	[valid, header, payload] := verify_jwt
 }
 
-verify_jwt := io.jwt.decode_verify(input.Token, {
-        "cert": input.Key,
-	}
-)
+verify_jwt := io.jwt.decode_verify(input.Token, {"cert": input.Key})
