@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	_ "embed"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -12,6 +13,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+)
+
+// Core OPA policies.
+var (
+	//go:embed rego/authentication.rego
+	opaAuthentication string
 )
 
 func main() {
