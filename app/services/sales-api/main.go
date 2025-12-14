@@ -17,6 +17,7 @@ import (
 	v1 "github.com/standard-librarian/gosale/business/web/v1"
 	"github.com/standard-librarian/gosale/business/web/v1/debug"
 	"github.com/standard-librarian/gosale/foundation/logger"
+	"github.com/standard-librarian/gosale/foundation/web"
 )
 
 var build = "develop"
@@ -31,7 +32,7 @@ func main() {
 	}
 
 	traceIDFunc := func(ctx context.Context) string {
-		return ""
+		return web.GetTraceID(ctx)
 	}
 
 	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "SALES-API", traceIDFunc, events)
