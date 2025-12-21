@@ -7,6 +7,7 @@ import (
 	"github.com/standard-librarian/gosale/business/web/v1/auth"
 	"github.com/standard-librarian/gosale/business/web/v1/response"
 	"github.com/standard-librarian/gosale/foundation/logger"
+	"github.com/standard-librarian/gosale/foundation/validate"
 	"github.com/standard-librarian/gosale/foundation/web"
 )
 
@@ -14,9 +15,7 @@ import (
 // application errors which are used to respond to the client in a uniform way.
 // Unexpected errors (status >= 500) are logged.
 func Errors(log *logger.Logger) web.Middleware {
-
 	m := func(handler web.Handler) web.Handler {
-
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			if err := handler(ctx, w, r); err != nil {
 				log.Error(ctx, "message", "msg", err)
@@ -27,10 +26,22 @@ func Errors(log *logger.Logger) web.Middleware {
 				switch {
 				case response.IsError(err):
 					reqErr := response.GetError(err)
+
+					if validate.IsFieldErrors(reqErr.Err) {
+						fieldErrors := validate.GetFieldErrors(reqErr.Err)
+						er = response.ErrorDocument{
+							Error:  "data validation error",
+							Fields: fieldErrors.Fields(),
+						}
+						status = reqErr.Status
+						break
+					}
+
 					er = response.ErrorDocument{
 						Error: reqErr.Error(),
 					}
 					status = reqErr.Status
+
 				case auth.IsAuthError(err):
 					er = response.ErrorDocument{
 						Error: http.StatusText(http.StatusUnauthorized),
